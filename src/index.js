@@ -39,8 +39,18 @@ function shopKeyboard(lang) {
   return new InlineKeyboard().webApp(T[lang].open, appUrl);
 }
 
+bot.use(async (ctx, next) => {
+  console.log(`Yangilanish: ${Object.keys(ctx.update).filter((k) => k !== 'update_id').join(',')} (foydalanuvchi ${ctx.from?.id ?? '?'})`);
+  await next();
+});
+
 bot.command('start', async (ctx) => {
-  const customer = await upsertCustomer(ctx.from);
+  let customer = { lang: null };
+  try {
+    customer = await upsertCustomer(ctx.from);
+  } catch (err) {
+    console.error('Bazaga yozishda xato:', err.message);
+  }
   if (!customer.lang) {
     return ctx.reply(T.uz.chooseLang, { reply_markup: langKeyboard() });
   }
@@ -49,9 +59,13 @@ bot.command('start', async (ctx) => {
 
 bot.callbackQuery(/^lang:(uz|ru)$/, async (ctx) => {
   const lang = ctx.match[1];
-  await upsertCustomer(ctx.from);
-  await setLang(ctx.from.id, lang);
   await ctx.answerCallbackQuery();
+  try {
+    await upsertCustomer(ctx.from);
+    await setLang(ctx.from.id, lang);
+  } catch (err) {
+    console.error('Tilni saqlashda xato:', err.message);
+  }
   await ctx.editMessageText(T[lang].welcome, { reply_markup: shopKeyboard(lang) });
 });
 
@@ -60,9 +74,25 @@ bot.catch((err) => console.error('Bot xatosi:', err.error?.message ?? err));
 const app = express();
 const here = path.dirname(fileURLToPath(import.meta.url));
 
+process.on('unhandledRejection', (err) => console.error('Kutilmagan xato:', err?.message ?? err));
+process.on('uncaughtException', (err) => console.error('Kutilmagan xato:', err?.message ?? err));
+
+app.use(express.json());
 app.get('/health', (_req, res) => res.send('ok'));
 app.use('/app', express.static(path.join(here, '..', 'public', 'app')));
-app.post('/webhook', webhookCallback(bot, 'express', { secretToken: WEBHOOK_SECRET }));
+const handleWebhook = webhookCallback(bot, 'express', {
+  secretToken: WEBHOOK_SECRET,
+  timeoutMilliseconds: 25000,
+  onTimeout: 'return',
+});
+app.post('/webhook', async (req, res) => {
+  try {
+    await handleWebhook(req, res);
+  } catch (err) {
+    console.error('Webhook xatosi:', err.message);
+    if (!res.headersSent) res.sendStatus(200);
+  }
+});
 
 await migrate();
 await bot.init();
