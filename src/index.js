@@ -3,6 +3,8 @@ import { Bot, InlineKeyboard, webhookCallback } from 'grammy';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { migrate, upsertCustomer, setLang } from './db.js';
+import { api } from './api.js';
+import { seedIfEmpty } from './seed.js';
 
 const { BOT_TOKEN, WEBHOOK_SECRET, DATABASE_URL } = process.env;
 const PORT = process.env.PORT || 3000;
@@ -79,6 +81,8 @@ process.on('uncaughtException', (err) => console.error('Kutilmagan xato:', err?.
 
 app.use(express.json());
 app.get('/health', (_req, res) => res.send('ok'));
+app.use('/api', api);
+app.use('/img', express.static(path.join(here, '..', 'public', 'img'), { maxAge: '7d' }));
 app.use('/app', express.static(path.join(here, '..', 'public', 'app')));
 const handleWebhook = webhookCallback(bot, 'express', {
   secretToken: WEBHOOK_SECRET,
@@ -95,6 +99,7 @@ app.post('/webhook', async (req, res) => {
 });
 
 await migrate();
+await seedIfEmpty();
 await bot.init();
 await bot.api.setWebhook(`${BASE_URL}/webhook`, {
   secret_token: WEBHOOK_SECRET,

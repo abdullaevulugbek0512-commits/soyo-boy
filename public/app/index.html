@@ -1,22 +1,213 @@
 <!doctype html>
 <html lang="uz">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Soyo</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f6efe4; color: #3b2a1a;
-           display: flex; min-height: 100vh; align-items: center; justify-content: center; text-align: center; }
-    h1 { font-weight: 600; letter-spacing: .04em; }
-    p { color: #8a6f4d; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soyo</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#f6efe4;--card:#fffdf8;--ink:#3b2a1a;--mute:#8a6f4d;--gold:#b8924a;--gold-d:#9a7634;--line:#e6d9c3;--red:#b3402a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(246,239,228,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.logo{font-family:Georgia,"Times New Roman",serif;font-size:24px;letter-spacing:.12em;flex:1}
+.pill{padding:7px 12px;border:1px solid var(--line);border-radius:20px;font-size:13px;background:var(--card)}
+.cartbtn{position:relative;padding:7px 14px;border-radius:20px;background:var(--ink);color:#fff;font-size:13px}
+.badge{position:absolute;top:-6px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--gold);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+main{padding:14px 16px 40px;max-width:640px;margin:0 auto}
+.hero{display:block;width:100%;text-align:left;padding:26px 22px;border-radius:16px;color:#fff8e8;background:linear-gradient(120deg,#6b4a22,#b8924a)}
+.hero small{letter-spacing:.2em;font-size:11px;opacity:.9}
+.hero h2{font-family:Georgia,serif;font-weight:400;font-size:30px;margin:6px 0 12px}
+.hero span{display:inline-block;padding:8px 16px;background:#fff8e8;color:var(--ink);font-size:12px;letter-spacing:.1em}
+h3{font-family:Georgia,serif;font-weight:400;font-size:22px;margin:26px 0 12px}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cat{position:relative;border-radius:14px;overflow:hidden;background:#fff;aspect-ratio:4/5;text-align:left}
+.cat img{width:100%;height:100%;object-fit:cover}
+.cat b{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;color:#fff;font-weight:500;background:linear-gradient(transparent,rgba(40,25,10,.78))}
+.cat.empty{display:flex;align-items:center;justify-content:center;background:var(--card);border:1px dashed var(--line);color:var(--mute);text-align:center;padding:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:left}
+.card .im{position:relative;background:#fff}
+.card img{display:block;width:100%;aspect-ratio:4/5;object-fit:contain}
+.tag{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:11px;padding:3px 8px;border-radius:10px}
+.card .in{padding:10px 12px 12px}
+.nm{font-size:14px;line-height:1.3;min-height:36px}
+.pr{margin-top:6px;font-weight:600}.pr s{font-weight:400;color:var(--mute);margin-left:6px;font-size:12px}
+.pr.sale{color:var(--red)}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid var(--line);margin-right:4px;vertical-align:middle}
+.back{margin:2px 0 6px;color:var(--mute);font-size:14px}
+.empty-msg{text-align:center;color:var(--mute);padding:50px 10px}
+.sheet-bg{position:fixed;inset:0;background:rgba(30,18,8,.5);z-index:20;display:flex;align-items:flex-end}
+.sheet{width:100%;max-height:92vh;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet .big{display:block;width:100%;max-height:46vh;object-fit:contain;background:#fff;border-radius:12px}
+.sheet h4{font-size:18px;margin:12px 0 4px;font-weight:500}
+.lbl{margin:14px 0 6px;font-size:12px;letter-spacing:.08em;color:var(--mute);text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:14px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.off{opacity:.35;text-decoration:line-through}
+.main-btn{display:block;width:100%;margin-top:18px;padding:15px;border-radius:12px;background:var(--gold);color:#fff;font-weight:600;font-size:16px}
+.main-btn:disabled{background:var(--line);color:var(--mute)}
+.row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row img{width:68px;height:85px;object-fit:contain;background:#fff;border-radius:8px}
+.row .info{flex:1;font-size:14px}.row .info small{color:var(--mute)}
+.qty{display:flex;align-items:center;gap:10px;margin-top:8px}
+.qty button{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:18px}
+.total{display:flex;justify-content:space-between;font-size:18px;font-weight:600;padding:16px 0 4px}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;z-index:30;max-width:86%;text-align:center}
+</style>
 </head>
 <body>
-  <div>
-    <h1>Soyo</h1>
-    <p>Do‘kon tez orada shu yerda ochiladi.</p>
-  </div>
-  <script>if (window.Telegram) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }</script>
+<header>
+  <div class="logo">SOYO</div>
+  <button class="pill" id="langBtn"></button>
+  <button class="cartbtn" id="cartBtn"><span id="cartLbl"></span><span class="badge" id="badge" hidden>0</span></button>
+</header>
+<main id="main"></main>
+<div id="sheet"></div>
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const TXT = {
+  uz: { cart:'Savat', sale:'Aksiyalar', saleSub:'Chegirmadagi kiyimlar', shop:'Xarid qilish', cats:'Kategoriyalar', soon:'Tez orada', back:'← Orqaga',
+        color:'Rang', size:'Razmer', add:'Savatga qo‘shish', pick:'Razmerni tanlang', added:'Savatga qo‘shildi', soldout:'Tugagan',
+        empty:'Savat bo‘sh', total:'Jami', order:'Buyurtma berish', orderSoon:'Buyurtma berish tez orada ishga tushadi', noItems:'Hozircha kiyim yo‘q',
+        loadErr:'Yuklab bo‘lmadi. Qayta urinib ko‘ring.', retry:'Qayta urinish', cur:'so‘m', left:'Qoldi', remove:'O‘chirish' },
+  ru: { cart:'Корзина', sale:'Акции', saleSub:'Товары со скидкой', shop:'Купить', cats:'Категории', soon:'Скоро', back:'← Назад',
+        color:'Цвет', size:'Размер', add:'В корзину', pick:'Выберите размер', added:'Добавлено в корзину', soldout:'Нет в наличии',
+        empty:'Корзина пуста', total:'Итого', order:'Оформить заказ', orderSoon:'Оформление заказа скоро заработает', noItems:'Пока нет товаров',
+        loadErr:'Не удалось загрузить. Попробуйте ещё раз.', retry:'Повторить', cur:'сум', left:'Осталось', remove:'Удалить' }
+};
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+let lang = store.get('soyo_lang', null) || ((tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code === 'ru') ? 'ru' : 'uz');
+let cart = store.get('soyo_cart', []);   // [{v: variantId, p: productId, q: qty}]
+let data = null, view = { name: 'home' };
+const t = (k) => TXT[lang][k];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = (n) => Number(n).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ' + t('cur');
+const nm = (o, f) => o[f + '_' + lang];
+const price = (p) => p.sale_price != null ? p.sale_price : p.price;
+
+function toast(msg){ const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), 1800); }
+function saveCart(){ store.set('soyo_cart', cart); updateBadge(); }
+function updateBadge(){
+  const n = cart.reduce((a, c) => a + c.q, 0);
+  $('badge').hidden = !n; $('badge').textContent = n; $('cartLbl').textContent = t('cart');
+  $('langBtn').textContent = lang === 'uz' ? 'UZ | ru' : 'uz | RU';
+}
+function prodById(id){ return data.products.find((p) => p.id === id); }
+function findVariant(vid){ for (const p of data.products) { const v = p.variants.find((x) => x.id === vid); if (v) return { p, v }; } return null; }
+
+function cardHtml(p){
+  const colors = [...new Map(p.variants.map((v) => [v.hex, v])).values()];
+  return `<button class="card" data-p="${p.id}"><div class="im"><img loading="lazy" src="${esc(p.images[0] || '')}" alt="">${p.sale_price != null ? `<span class="tag">-${Math.round(100 - p.sale_price / p.price * 100)}%</span>` : ''}</div>
+    <div class="in"><div class="nm">${esc(nm(p, 'name'))}</div>
+    <div class="pr ${p.sale_price != null ? 'sale' : ''}">${money(price(p))}${p.sale_price != null ? `<s>${money(p.price)}</s>` : ''}</div>
+    <div style="margin-top:6px">${colors.map((c) => `<span class="dot" style="background:${esc(c.hex || '#ccc')}"></span>`).join('')}</div></div></button>`;
+}
+function bindCards(root){ root.querySelectorAll('[data-p]').forEach((b) => b.onclick = () => openProduct(Number(b.dataset.p))); }
+
+function render(){
+  updateBadge();
+  const m = $('main');
+  if (!data) return;
+  if (tg && tg.BackButton) { view.name === 'home' ? tg.BackButton.hide() : tg.BackButton.show(); }
+  if (view.name === 'home') {
+    m.innerHTML = `<button class="hero" id="heroBtn"><small>SOYO</small><h2>${t('sale')}</h2><span>${t('saleSub').toUpperCase()}</span></button>
+      <h3>${t('cats')}</h3><div class="cats">${data.categories.map((c) => {
+        const first = data.products.find((p) => p.category === c.slug);
+        return first ? `<button class="cat" data-c="${c.slug}"><img loading="lazy" src="${esc(first.images[0])}" alt=""><b>${esc(nm(c, 'name'))}</b></button>`
+                     : `<div class="cat empty"><div><b style="position:static;background:none;color:var(--ink)">${esc(nm(c, 'name'))}</b><br>${t('soon')}</div></div>`;
+      }).join('')}</div>`;
+    $('heroBtn').onclick = () => go({ name: 'sale' });
+    m.querySelectorAll('[data-c]').forEach((b) => b.onclick = () => go({ name: 'cat', slug: b.dataset.c }));
+  } else if (view.name === 'cat' || view.name === 'sale') {
+    const list = view.name === 'sale' ? data.products.filter((p) => p.sale_price != null) : data.products.filter((p) => p.category === view.slug);
+    const title = view.name === 'sale' ? t('sale') : nm(data.categories.find((c) => c.slug === view.slug), 'name');
+    m.innerHTML = `<button class="back" id="backBtn">${t('back')}</button><h3 style="margin-top:6px">${esc(title)}</h3>` +
+      (list.length ? `<div class="grid">${list.map(cardHtml).join('')}</div>` : `<div class="empty-msg">${t('noItems')}</div>`);
+    $('backBtn').onclick = () => go({ name: 'home' }); bindCards(m);
+  } else if (view.name === 'cart') {
+    renderCart(m);
+  }
+  window.scrollTo(0, 0);
+}
+function go(v){ view = v; render(); }
+if (tg && tg.BackButton) tg.BackButton.onClick(() => go({ name: 'home' }));
+
+function openProduct(id){
+  const p = prodById(id); if (!p) return;
+  const colors = [...new Map(p.variants.map((v) => [v.color_uz, v])).values()];
+  let color = colors.find((c) => p.variants.some((v) => v.color_uz === c.color_uz && v.stock > 0)) || colors[0];
+  let size = null;
+  const box = $('sheet');
+  const draw = () => {
+    const vs = p.variants.filter((v) => v.color_uz === color.color_uz);
+    const chosen = vs.find((v) => v.size === size);
+    box.innerHTML = `<div class="sheet-bg" id="bg"><div class="sheet">
+      <img class="big" src="${esc(p.images[0] || '')}" alt="">
+      <h4>${esc(nm(p, 'name'))}</h4>
+      <div class="pr ${p.sale_price != null ? 'sale' : ''}" style="font-size:18px">${money(price(p))}${p.sale_price != null ? `<s>${money(p.price)}</s>` : ''}</div>
+      <div class="lbl">${t('color')}: ${esc(nm(color, 'color'))}</div>
+      <div class="chips">${colors.map((c) => `<button class="chip ${c.color_uz === color.color_uz ? 'on' : ''}" data-col="${esc(c.color_uz)}"><span class="dot" style="background:${esc(c.hex || '#ccc')}"></span>${esc(nm(c, 'color'))}</button>`).join('')}</div>
+      <div class="lbl">${t('size')}</div>
+      <div class="chips">${vs.map((v) => `<button class="chip ${v.size === size ? 'on' : ''} ${v.stock <= 0 ? 'off' : ''}" data-size="${esc(v.size)}" ${v.stock <= 0 ? 'disabled' : ''}>${esc(v.size)}</button>`).join('')}</div>
+      ${chosen && chosen.stock > 0 && chosen.stock <= 3 ? `<div class="lbl" style="color:var(--red)">${t('left')}: ${chosen.stock}</div>` : ''}
+      <button class="main-btn" id="addBtn" ${chosen ? '' : 'disabled'}>${chosen ? t('add') : t('pick')}</button></div></div>`;
+    $('bg').onclick = (e) => { if (e.target.id === 'bg') box.innerHTML = ''; };
+    box.querySelectorAll('[data-col]').forEach((b) => b.onclick = () => { color = colors.find((c) => c.color_uz === b.dataset.col); size = null; draw(); });
+    box.querySelectorAll('[data-size]').forEach((b) => b.onclick = () => { size = b.dataset.size; draw(); });
+    $('addBtn').onclick = () => {
+      if (!chosen) return;
+      const line = cart.find((c) => c.v === chosen.id);
+      if (line) line.q = Math.min(line.q + 1, chosen.stock); else cart.push({ v: chosen.id, p: p.id, q: 1 });
+      saveCart(); box.innerHTML = ''; toast(t('added'));
+    };
+  };
+  draw();
+}
+
+function renderCart(m){
+  const lines = cart.map((c) => ({ c, f: findVariant(c.v) })).filter((x) => x.f);
+  m.innerHTML = `<button class="back" id="backBtn">${t('back')}</button><h3 style="margin-top:6px">${t('cart')}</h3>`;
+  $('backBtn').onclick = () => go({ name: 'home' });
+  if (!lines.length) { m.insertAdjacentHTML('beforeend', `<div class="empty-msg">${t('empty')}</div>`); return; }
+  let total = 0;
+  const rows = lines.map(({ c, f }) => { total += price(f.p) * c.q; return `<div class="row"><img src="${esc(f.p.images[0] || '')}" alt="">
+    <div class="info"><div>${esc(nm(f.p, 'name'))}</div><small>${esc(nm(f.v, 'color'))} · ${esc(f.v.size)}</small>
+    <div class="pr">${money(price(f.p))}</div>
+    <div class="qty"><button data-dec="${c.v}">−</button><b>${c.q}</b><button data-inc="${c.v}">+</button><button data-del="${c.v}" style="width:auto;padding:0 10px;font-size:12px;color:var(--mute)">${t('remove')}</button></div></div></div>`; }).join('');
+  m.insertAdjacentHTML('beforeend', rows + `<div class="total"><span>${t('total')}</span><span>${money(total)}</span></div><button class="main-btn" id="orderBtn">${t('order')}</button>`);
+  const upd = (vid, fn) => { const l = cart.find((x) => x.v === vid); if (!l) return; fn(l); cart = cart.filter((x) => x.q > 0); saveCart(); renderCart(m); };
+  m.querySelectorAll('[data-inc]').forEach((b) => b.onclick = () => upd(Number(b.dataset.inc), (l) => { const f = findVariant(l.v); l.q = Math.min(l.q + 1, f ? f.v.stock : l.q + 1); }));
+  m.querySelectorAll('[data-dec]').forEach((b) => b.onclick = () => upd(Number(b.dataset.dec), (l) => { l.q -= 1; }));
+  m.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => upd(Number(b.dataset.del), (l) => { l.q = 0; }));
+  $('orderBtn').onclick = () => toast(t('orderSoon'));
+}
+
+$('cartBtn').onclick = () => go({ name: 'cart' });
+$('langBtn').onclick = () => { lang = lang === 'uz' ? 'ru' : 'uz'; store.set('soyo_lang', lang); document.documentElement.lang = lang; render(); };
+
+async function load(){
+  $('main').innerHTML = '';
+  try {
+    const r = await fetch('/api/catalog'); if (!r.ok) throw new Error('bad');
+    data = await r.json();
+    // yo'qolgan yoki tugagan kiyimlarni savatdan tozalaymiz
+    cart = cart.filter((c) => findVariant(c.v)); saveCart();
+    render();
+  } catch {
+    $('main').innerHTML = `<div class="empty-msg">${t('loadErr')}<br><br><button class="main-btn" id="retry">${t('retry')}</button></div>`;
+    $('retry').onclick = load; updateBadge();
+  }
+}
+document.documentElement.lang = lang; updateBadge(); load();
+</script>
 </body>
 </html>

@@ -5,9 +5,15 @@ import path from 'node:path';
 
 // Neon satridagi keraksiz qismni olib tashlaymiz (&channel_binding=require)
 function cleanUrl(raw) {
-  const u = new URL(raw);
+  let u;
+  try {
+    u = new URL(raw);
+  } catch {
+    return raw;
+  }
   u.searchParams.delete('channel_binding');
-  u.searchParams.set('sslmode', 'verify-full');
+  const local = u.searchParams.has('host') || ['localhost', '127.0.0.1', ''].includes(u.hostname);
+  if (!local) u.searchParams.set('sslmode', 'verify-full');
   return u.toString();
 }
 
