@@ -96,3 +96,5 @@ INSERT INTO categories (slug, name_uz, name_ru, sort) VALUES
   ('jemper',    'Jemperlar',     'Джемперы',     5),
   ('kardigan',  'Kardiganlar',   'Кардиганы',    6)
 ON CONFLICT (slug) DO NOTHING;
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name TEXT;

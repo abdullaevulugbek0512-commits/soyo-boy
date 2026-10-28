@@ -55,6 +55,12 @@ h3{font-family:Georgia,serif;font-weight:400;font-size:22px;margin:26px 0 12px}
 .qty{display:flex;align-items:center;gap:10px;margin-top:8px}
 .qty button{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--card);font-size:18px}
 .total{display:flex;justify-content:space-between;font-size:18px;font-weight:600;padding:16px 0 4px}
+.fld{display:block;margin:12px 0 0}.fld span{display:block;font-size:12px;letter-spacing:.06em;color:var(--mute);margin-bottom:5px;text-transform:uppercase}
+.fld input,.fld textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:inherit;color:var(--ink)}
+.fld textarea{min-height:76px;resize:vertical}
+.sum{margin-top:16px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px;font-size:14px}
+.sum div{display:flex;justify-content:space-between;padding:3px 0}.sum .g{font-weight:700;font-size:17px;border-top:1px solid var(--line);margin-top:6px;padding-top:9px}
+.done{text-align:center;padding:60px 10px}.done .ok{font-size:54px}
 .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:14px;z-index:30;max-width:86%;text-align:center}
 </style>
 </head>
@@ -74,11 +80,17 @@ const TXT = {
   uz: { cart:'Savat', sale:'Aksiyalar', saleSub:'Chegirmadagi kiyimlar', shop:'Xarid qilish', cats:'Kategoriyalar', soon:'Tez orada', back:'← Orqaga',
         color:'Rang', size:'Razmer', add:'Savatga qo‘shish', pick:'Razmerni tanlang', added:'Savatga qo‘shildi', soldout:'Tugagan',
         empty:'Savat bo‘sh', total:'Jami', order:'Buyurtma berish', orderSoon:'Buyurtma berish tez orada ishga tushadi', noItems:'Hozircha kiyim yo‘q',
-        loadErr:'Yuklab bo‘lmadi. Qayta urinib ko‘ring.', retry:'Qayta urinish', cur:'so‘m', left:'Qoldi', remove:'O‘chirish' },
+        loadErr:'Yuklab bo‘lmadi. Qayta urinib ko‘ring.', retry:'Qayta urinish', cur:'so‘m', left:'Qoldi', remove:'O‘chirish',
+        name:'Ismingiz', phone:'Telefon raqam', address:'Manzil (shahar, ko‘cha, uy)', items:'Kiyimlar', delivery:'Yetkazib berish', grand:'Jami to‘lov', confirm:'Buyurtmani tasdiqlash', sending:'Yuborilmoqda...',
+        fillAll:'Barcha maydonlarni to‘ldiring', badPhone:'Telefon raqamni to‘g‘ri kiriting', needTg:'Do‘konni Telegram ichida oching', stockErr:'Ba’zi kiyimlar qolmadi, savat yangilandi', tooMany:'Avval oldingi buyurtmalaringizni to‘lang', netErr:'Aloqa xatosi, qayta urinib ko‘ring',
+        doneTitle:'Buyurtma qabul qilindi!', doneSub:'To‘lov ma’lumotlari botga yuborildi. Botga qaytib, to‘lov chekini yuboring.', toBot:'Botga qaytish' },
   ru: { cart:'Корзина', sale:'Акции', saleSub:'Товары со скидкой', shop:'Купить', cats:'Категории', soon:'Скоро', back:'← Назад',
         color:'Цвет', size:'Размер', add:'В корзину', pick:'Выберите размер', added:'Добавлено в корзину', soldout:'Нет в наличии',
         empty:'Корзина пуста', total:'Итого', order:'Оформить заказ', orderSoon:'Оформление заказа скоро заработает', noItems:'Пока нет товаров',
-        loadErr:'Не удалось загрузить. Попробуйте ещё раз.', retry:'Повторить', cur:'сум', left:'Осталось', remove:'Удалить' }
+        loadErr:'Не удалось загрузить. Попробуйте ещё раз.', retry:'Повторить', cur:'сум', left:'Осталось', remove:'Удалить',
+        name:'Ваше имя', phone:'Номер телефона', address:'Адрес (город, улица, дом)', items:'Товары', delivery:'Доставка', grand:'Итого к оплате', confirm:'Подтвердить заказ', sending:'Отправка...',
+        fillAll:'Заполните все поля', badPhone:'Введите корректный номер телефона', needTg:'Откройте магазин внутри Telegram', stockErr:'Некоторых товаров уже нет, корзина обновлена', tooMany:'Сначала оплатите предыдущие заказы', netErr:'Ошибка связи, попробуйте ещё раз',
+        doneTitle:'Заказ принят!', doneSub:'Данные для оплаты отправлены в бот. Вернитесь в бот и отправьте чек.', toBot:'Вернуться в бот' }
 };
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
@@ -135,6 +147,11 @@ function render(){
     $('backBtn').onclick = () => go({ name: 'home' }); bindCards(m);
   } else if (view.name === 'cart') {
     renderCart(m);
+  } else if (view.name === 'checkout') {
+    renderCheckout(m);
+  } else if (view.name === 'done') {
+    m.innerHTML = `<div class="done"><div class="ok">✅</div><h3>${t('doneTitle')}</h3><p style="color:var(--mute)">${t('doneSub')}</p><button class="main-btn" id="toBot">${t('toBot')}</button></div>`;
+    $('toBot').onclick = () => { if (tg && tg.close) tg.close(); else go({ name: 'home' }); };
   }
   window.scrollTo(0, 0);
 }
@@ -188,7 +205,42 @@ function renderCart(m){
   m.querySelectorAll('[data-inc]').forEach((b) => b.onclick = () => upd(Number(b.dataset.inc), (l) => { const f = findVariant(l.v); l.q = Math.min(l.q + 1, f ? f.v.stock : l.q + 1); }));
   m.querySelectorAll('[data-dec]').forEach((b) => b.onclick = () => upd(Number(b.dataset.dec), (l) => { l.q -= 1; }));
   m.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => upd(Number(b.dataset.del), (l) => { l.q = 0; }));
-  $('orderBtn').onclick = () => toast(t('orderSoon'));
+  $('orderBtn').onclick = () => go({ name: 'checkout' });
+}
+
+function renderCheckout(m){
+  const lines = cart.map((c) => ({ c, f: findVariant(c.v) })).filter((x) => x.f);
+  if (!lines.length) return go({ name: 'cart' });
+  const saved = store.get('soyo_form', {});
+  const u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {};
+  const items = lines.reduce((a, { c, f }) => a + price(f.p) * c.q, 0);
+  const fee = Number(data.delivery_fee || 0);
+  m.innerHTML = `<button class="back" id="backBtn">${t('back')}</button><h3 style="margin-top:6px">${t('order')}</h3>
+    <label class="fld"><span>${t('name')}</span><input id="fName" maxlength="80" autocomplete="name" value="${esc(saved.name || u.first_name || '')}"></label>
+    <label class="fld"><span>${t('phone')}</span><input id="fPhone" type="tel" maxlength="20" autocomplete="tel" placeholder="+998 90 123 45 67" value="${esc(saved.phone || '')}"></label>
+    <label class="fld"><span>${t('address')}</span><textarea id="fAddr" maxlength="300">${esc(saved.address || '')}</textarea></label>
+    <div class="sum"><div><span>${t('items')}</span><span>${money(items)}</span></div><div><span>${t('delivery')}</span><span>${money(fee)}</span></div><div class="g"><span>${t('grand')}</span><span>${money(items + fee)}</span></div></div>
+    <button class="main-btn" id="sendBtn">${t('confirm')}</button>`;
+  $('backBtn').onclick = () => go({ name: 'cart' });
+  $('sendBtn').onclick = async () => {
+    const form = { name: $('fName').value.trim(), phone: $('fPhone').value.trim(), address: $('fAddr').value.trim() };
+    if (!form.name || !form.phone || !form.address) return toast(t('fillAll'));
+    if (!/^\+?[0-9\s()-]{7,20}$/.test(form.phone)) return toast(t('badPhone'));
+    if (!tg || !tg.initData) return toast(t('needTg'));
+    store.set('soyo_form', form);
+    const btn = $('sendBtn'); btn.disabled = true; btn.textContent = t('sending');
+    try {
+      const r = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg.initData, ...form, items: lines.map(({ c }) => ({ variant_id: c.v, qty: c.q })) }) });
+      if (r.ok) { cart = []; saveCart(); return go({ name: 'done' }); }
+      const j = await r.json().catch(() => ({}));
+      btn.disabled = false; btn.textContent = t('confirm');
+      if (r.status === 409) { toast(t('stockErr')); await load(); return go({ name: 'cart' }); }
+      if (r.status === 429) return toast(t('tooMany'));
+      if (r.status === 401) return toast(t('needTg'));
+      toast(j.error === 'bad_phone' ? t('badPhone') : t('fillAll'));
+    } catch { btn.disabled = false; btn.textContent = t('confirm'); toast(t('netErr')); }
+  };
 }
 
 $('cartBtn').onclick = () => go({ name: 'cart' });

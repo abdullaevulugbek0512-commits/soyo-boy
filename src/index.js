@@ -1,9 +1,10 @@
 import express from 'express';
-import { Bot, InlineKeyboard, webhookCallback } from 'grammy';
+import { webhookCallback } from 'grammy';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { migrate, upsertCustomer, setLang } from './db.js';
-import { api } from './api.js';
+import { migrate } from './db.js';
+import { makeApi } from './api.js';
+import { createBot, notifyOrderCreated } from './bot.js';
 import { seedIfEmpty } from './seed.js';
 
 const { BOT_TOKEN, WEBHOOK_SECRET, DATABASE_URL } = process.env;
@@ -16,74 +17,24 @@ for (const [k, v] of Object.entries({ BOT_TOKEN, WEBHOOK_SECRET, DATABASE_URL, B
     process.exit(1);
   }
 }
-
-const T = {
-  uz: {
-    chooseLang: 'Tilni tanlang / Выберите язык',
-    welcome: 'Soyo do‘koniga xush kelibsiz! Kiyimlarni ko‘rish uchun pastdagi tugmani bosing.',
-    open: '🛍 Do‘konni ochish',
-  },
-  ru: {
-    chooseLang: 'Tilni tanlang / Выберите язык',
-    welcome: 'Добро пожаловать в магазин Soyo! Нажмите кнопку ниже, чтобы посмотреть одежду.',
-    open: '🛍 Открыть магазин',
-  },
-};
+if (!process.env.OWNER_IDS) console.warn('Diqqat: OWNER_IDS sozlanmagan, chek egasiga yetib bormaydi.');
+if (!process.env.CARD_NUMBER) console.warn('Diqqat: CARD_NUMBER sozlanmagan.');
 
 const appUrl = `${BASE_URL}/app/`;
-const bot = new Bot(BOT_TOKEN);
-
-function langKeyboard() {
-  return new InlineKeyboard().text('🇺🇿 O‘zbekcha', 'lang:uz').text('🇷🇺 Русский', 'lang:ru');
-}
-
-function shopKeyboard(lang) {
-  return new InlineKeyboard().webApp(T[lang].open, appUrl);
-}
-
-bot.use(async (ctx, next) => {
-  console.log(`Yangilanish: ${Object.keys(ctx.update).filter((k) => k !== 'update_id').join(',')} (foydalanuvchi ${ctx.from?.id ?? '?'})`);
-  await next();
-});
-
-bot.command('start', async (ctx) => {
-  let customer = { lang: null };
-  try {
-    customer = await upsertCustomer(ctx.from);
-  } catch (err) {
-    console.error('Bazaga yozishda xato:', err.message);
-  }
-  if (!customer.lang) {
-    return ctx.reply(T.uz.chooseLang, { reply_markup: langKeyboard() });
-  }
-  return ctx.reply(T[customer.lang].welcome, { reply_markup: shopKeyboard(customer.lang) });
-});
-
-bot.callbackQuery(/^lang:(uz|ru)$/, async (ctx) => {
-  const lang = ctx.match[1];
-  await ctx.answerCallbackQuery();
-  try {
-    await upsertCustomer(ctx.from);
-    await setLang(ctx.from.id, lang);
-  } catch (err) {
-    console.error('Tilni saqlashda xato:', err.message);
-  }
-  await ctx.editMessageText(T[lang].welcome, { reply_markup: shopKeyboard(lang) });
-});
-
-bot.catch((err) => console.error('Bot xatosi:', err.error?.message ?? err));
-
-const app = express();
-const here = path.dirname(fileURLToPath(import.meta.url));
+const bot = createBot(BOT_TOKEN, { appUrl });
 
 process.on('unhandledRejection', (err) => console.error('Kutilmagan xato:', err?.message ?? err));
 process.on('uncaughtException', (err) => console.error('Kutilmagan xato:', err?.message ?? err));
 
-app.use(express.json());
+const app = express();
+const here = path.dirname(fileURLToPath(import.meta.url));
+
+app.use(express.json({ limit: '100kb' }));
 app.get('/health', (_req, res) => res.send('ok'));
-app.use('/api', api);
+app.use('/api', makeApi({ botToken: BOT_TOKEN, onOrderCreated: (id) => notifyOrderCreated(bot, id) }));
 app.use('/img', express.static(path.join(here, '..', 'public', 'img'), { maxAge: '7d' }));
 app.use('/app', express.static(path.join(here, '..', 'public', 'app')));
+
 const handleWebhook = webhookCallback(bot, 'express', {
   secretToken: WEBHOOK_SECRET,
   timeoutMilliseconds: 25000,
